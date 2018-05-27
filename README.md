@@ -12,6 +12,8 @@ This provides the `geojson_d3` command.
 ## Use
 `geojson_d3` takes one mandatory argument: a file containing valid GeoJSON. Polygon and / or MultiPolygon geometries can be included as a `Feature,` or a `Geometry`, or a`FeatureCollection` or `GeometryCollection` – you may also mix the two geometries in a `FeatureCollection` or `GeometryCollection`.
 
+- No assumptions are made concerning the existing winding order
+    - output will always be D3-compliant winding order
 - Processing of nested `GeometryCollection`s is supported, [but you shouldn't be using those](https://tools.ietf.org/html/rfc7946#section-3.1.8)
 - Empty geometries or collections will be left unaltered
 - Geometries which are already in "`D3`" format will be left unaltered
@@ -29,7 +31,7 @@ If you aren't piping the output of the command to a file, `geojson_d3` will disp
 While the structure of the input GeoJSON is validated, individual geometries are *not* validated in the DE-9IM sense. If they self-intersect, have open rings etc., results are not guaranteed to be correct.
 
 ## Speed
-Expect approximately an order-of-magnitude improvement over similar JS-based tools. The included [`NYC Boroughs`](boroughs.geojson) file (~69k `Points`) is processed in ~150 ms on a dual-core 1.8 GHz Intel Core i7.
+The included [`NYC Boroughs`](boroughs.geojson) file (~69k `Points`) is processed in ~150 ms on a dual-core 1.8 GHz Intel Core i7.
 
 ## Binaries
 Pre-built binaries are available from [releases](https://github.com/urschrei/geojson_d3/releases/latest). Binaries are available for:
