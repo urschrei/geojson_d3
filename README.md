@@ -1,3 +1,5 @@
+[![Linux / macOS Build Status](https://travis-ci.org/urschrei/polylabel_cmd.svg?branch=master)](https://travis-ci.org/urschrei/geojson_d3) [![Windows Build status](https://ci.appveyor.com/api/projects/status/pue3tmorkpdc560r/branch/master?svg=true)](https://ci.appveyor.com/project/urschrei/geojson-d3/branch/master)
+ [![Crates Link](https://img.shields.io/crates/v/geojson_d3.svg)](https://crates.io/crates/geojson_d3)
 # `GeoJSON_D3`
 
 # Introduction
