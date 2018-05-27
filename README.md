@@ -2,8 +2,8 @@
  [![Crates Link](https://img.shields.io/crates/v/geojson_d3.svg)](https://crates.io/crates/geojson_d3)
 # `GeoJSON_D3`
 
-# Introduction
-D3 expects the rings of input Polygons in [a different order](https://github.com/d3/d3-geo/pull/79) than the [GeoJSON RFC 7946](https://tools.ietf.org/html/rfc7946#section-3.1.6) specification. This can lead to unexpected errors. This binary provides a conversion function for GeoJSON `RFC 7946` files containing Polygons and / or MultiPolygons. All other geometry types are left untouched.
+## Introduction
+D3 expects the rings of input Polygons in [a different order](https://github.com/d3/d3-geo/pull/79) than the [GeoJSON RFC 7946](https://tools.ietf.org/html/rfc7946#section-3.1.6) specification. This can lead to unexpected errors. This binary provides a conversion function for `RFC 7946`-compliant input containing Polygons and / or MultiPolygons.
 
 ## Installation
 Install it using `cargo install geojson_d3`, or download a [binary](#binaries) and put it on your $PATH.  
@@ -15,6 +15,8 @@ This provides the `geojson_d3` command.
 - Processing of nested `GeometryCollection`s is supported, [but you shouldn't be using those](https://tools.ietf.org/html/rfc7946#section-3.1.8)
 - Empty geometries or collections will be left unaltered
 - Geometries which are already in "`D3`" format will be left unaltered
+- Non-(Multi)Polygon geometries are left unaltered
+- All input properties are preserved
 
 You may also pass:
 - `-p` or `--pretty`, which will pretty-print the GeoJSON output
