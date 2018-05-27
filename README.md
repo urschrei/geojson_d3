@@ -29,7 +29,7 @@ If you aren't piping the output of the command to a file, `geojson_d3` will disp
 While the structure of the input GeoJSON is validated, individual geometries are *not* validated in the DE-9IM sense. If they self-intersect, have open rings etc., results are not guaranteed to be correct.
 
 ## Speed
-I haven't benchmarked it, and don't intend to. `Serde-JSON` is fast, though, and geometries are processed in parallel. Expect an order-of-magnitude improvement over similar JS-based tools.
+Expect approximately an order-of-magnitude improvement over similar JS-based tools. The included [`NYC Boroughs`](boroughs.geojson) file (~69k `Points`) is processed in ~150 ms on a dual-core 1.8 GHz Intel Core i7.
 
 ## Binaries
 Pre-built binaries are available from [releases](https://github.com/urschrei/geojson_d3/releases/latest). Binaries are available for:
