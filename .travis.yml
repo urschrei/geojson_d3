@@ -1,0 +1,104 @@
+dist: trusty
+language: rust
+services: docker
+sudo: required
+env:
+  global:
+    # This will be part of the release tarball
+    # TODO change the project name
+    - CRATE_NAME=geojson_d3
+    - TRAVIS_CARGO_NIGHTLY_FEATURE=""
+    - DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
+    # GH_TOKEN
+    - secure: duS4EzFgamSd0mhi/MVsWnnyZpn9031VFSmoNIaLocP/vLRalkewMf/vkc2QCt6L4uJgts6kL3j3JcC9lYa5D6MJwwyAxkn6KwivrG6g/Z+mywjDll+P9iqIF96O0okFxnITu3I4yZDsYb9ERH25sfYzetAFbvjc3vOL8FD6bHboo65iukDWrl18QS8qdHycAb7Q9mxjK+0HbP0IjlROLhjzwJ3/xQ40Cv2xgZKnNGH2QsrbLhnKvrvoScU7AZR3gw5XaNWyiVkVmHEfwNwFYX/LDAeTIzH3sdYFTjersDHLFbmTzLSQuIHfEvSzzBdvasUiZIGF/rsFjjhsov5pjXRbwaZUHrPH6Gkmx916T/vZyWeg38QJvsdZ6n//gbas+Nnr4g/mvVGfZDlr1+RTKZWCmf5HjuC3Wsa59RTkr1+d7p2tefUk52N4cPcn+MF/zXT8EmnL//O/QNjQaLMdmYvnQcWykMtwY2JkHgiuNRy7LRO9NACDw16rVjM0HNGI3XXGTYwL0cB02SSSAkK4/8dHspc8XT57/QLW1XTqk1osgbrTNXxx9ajwpKkXKdbfXmN2hxGHtixtQrwgWEZTuWC6E70RTfLYnu62bZ/jaqx2E/EDVZu3/wq1vBLcal1UCYh9L3ln3RtEAzKNPUtHBKGeEfkaZ+i52jLoUir4lCo=
+
+
+matrix:
+  include:
+    # STABLE
+    - os: osx
+      osx_image: xcode9.3
+      rust: stable
+      env: TARGET=x86_64-apple-darwin
+
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-gnu
+      services: docker
+
+    # BETA
+    - os: osx
+      rust: beta
+      osx_image: xcode9.3
+      env: TARGET=x86_64-apple-darwin
+
+    - os: linux
+      rust: beta
+      env: TARGET=x86_64-unknown-linux-gnu
+
+    # NIGHTLY
+    - os: osx
+      osx_image: xcode9.3
+      rust: nightly
+      env: TARGET=x86_64-apple-darwin
+
+    - os: linux
+      rust: nightly
+      env: TARGET=x86_64-unknown-linux-gnu
+
+before_install:
+  - set -e
+
+install:
+  - bash ci/install.sh
+  - source ~/.cargo/env || true
+
+script:
+  - bash ci/script.sh
+
+after_script: set +e
+
+before_deploy:
+  # OSX deploy doesn't need a Dockerised manylinux1 build
+  - if ! [[ "$TARGET" == "x86_64-unknown-linux-gnu" ]]; then bash ci/before_deploy_osx.sh; fi
+  # Linux deploy needs Dockerised manylinux1 artefacts
+  - if [[ "$TARGET" == "x86_64-unknown-linux-gnu" ]]; then docker pull $DOCKER_IMAGE; fi
+  - if [[ "$TARGET" == "x86_64-unknown-linux-gnu" ]]; then sudo docker run -e TRAVIS_TAG="$TRAVIS_TAG" --rm -v `pwd`:/io:rw $DOCKER_IMAGE /io/ci/before_deploy_manylinux1.sh; fi
+  
+deploy:
+  # TODO Regenerate this api_key for your project, this one won't work for you. Here's how:
+  # - Go to 'https://github.com/settings/tokens/new' and generate a Token with only the
+  # `public_repo` scope enabled
+  # - Call `travis encrypt $github_token` where $github_token is the token you got in the previous
+  # step and `travis` is the official Travis CI gem (see https://rubygems.org/gems/travis/)
+  # - Enter the "encrypted value" below
+  api_key:
+        - secure: eVyinKReeqyM8aHm96X51YQsKAi0FFEJspDW7ZUbJ980dXfO6uqr6yTKLf4iRYeeAjzElucUAowHFbYNzAm6WFxF7K5HQ81fLMeh9ZZGT/f4zjFXisET86bzT1F4qad7bAS9HTpTMSYex0CscwRc4+38sUo7Nd505b8VJbGGcEBT/FtTemDuFSZteyQmc2+PcxOIQzIiOLHvo39s2TRBqli76W6GvCtrWXfNtR+96jvO9IX+udse9IKQ7RW/yGdS765Ss1dv5xoEAv7j5ZEuyIovaqP1wz/l5CjbDRmhA/IHX569Ha0X7iHCz6iM8NHdSYDodSLpY2Rvf+kseeASt18G2zsTaBzlXsFfAxUmp7oPlCMoTKYFqGHUzOQ0HY7WJMDnUeNkJhe9jX5Co6PJWGCIRZ4tsXF/8RP1eVI+f48xWa3dXm9XjgQoBZX/sFo4QkDWmWKT9ST0kwnFjRRCksdTTcpD+8cEaeWCWHrgvLb0GesTlkYmex8zk9GPsiavDLlhN476Xnjdu1drl1zp3ys11dFaDcnSJZ9sUsiiPgy3fh1+lxBI5bssTD+AvFbw3y2k3Fq7YuDEGPz5HUlLI2j+5iUE4hw0dqjd+y/RgXzBcCt5CRPvN968rwFksIegXSOuZk6BURoPnUtow95HbuyN5qvYP6W8v38Lo3rGVdU=
+  file_glob: true
+  file: $CRATE_NAME-$TRAVIS_TAG-$TARGET.*
+  # don't delete the artifacts from previous phases
+  skip_cleanup: true
+  # deploy when a new tag is pushed
+  on:
+    # TODO Here you can pick which targets will generate binary releases
+    # In this example, there are some targets that are tested using the stable
+    # and nightly channels. This condition makes sure there is only one release
+    # for such targets and that's generated using the stable channel
+    condition: $TRAVIS_RUST_VERSION = stable
+    tags: true
+  provider: releases
+
+cache: cargo
+before_cache:
+  # Travis can't cache files that are not readable by "others"
+  - chmod -R a+r $HOME/.cargo
+
+branches:
+  only:
+    # release tags
+    - /^v\d+\.\d+\.\d+.*$/
+    - master
+
+notifications:
+  email:
+    on_success: never
