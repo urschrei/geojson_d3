@@ -113,9 +113,10 @@ fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize) {
                     .try_into()
                     .expect("Failed to convert a Polygon");
                 geo_type.exterior.make_cw_winding();
-                for line in &mut geo_type.interiors {
-                    line.make_ccw_winding();
-                }
+                geo_type
+                    .interiors
+                    .iter_mut()
+                    .for_each(|ring| ring.make_ccw_winding());
                 ctr.fetch_add(1, Ordering::SeqCst);
                 Value::from(&geo_type)
             }
@@ -128,9 +129,10 @@ fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize) {
                     // bump the Polygon counter
                     ctr.fetch_add(1, Ordering::SeqCst);
                     polygon.exterior.make_cw_winding();
-                    for line in &mut polygon.interiors {
-                        line.make_ccw_winding();
-                    }
+                    polygon
+                        .interiors
+                        .iter_mut()
+                        .for_each(|ring| ring.make_ccw_winding());
                 });
                 Value::from(&geo_type)
             }
