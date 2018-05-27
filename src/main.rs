@@ -65,32 +65,32 @@ where
 }
 
 /// Process top-level `GeoJSON` items
-fn process_geojson(gj: &mut GeoJson, ctr: &AtomicIsize) {
+fn process_geojson(gj: &mut GeoJson, ctr: &AtomicIsize, rev: &bool) {
     match *gj {
         GeoJson::FeatureCollection(ref mut collection) => collection.features
             .par_iter_mut()
             // Only pass on non-empty geometries, doing so by reference
             .filter_map(|feature| feature.geometry.as_mut())
-            .for_each(|geometry| label_geometry(geometry, ctr)),
+            .for_each(|geometry| process_geometry(geometry, ctr, rev)),
         GeoJson::Feature(ref mut feature) => {
             if let Some(ref mut geometry) = feature.geometry {
-                label_geometry(geometry, ctr)
+                process_geometry(geometry, ctr, rev)
             }
         }
-        GeoJson::Geometry(ref mut geometry) => label_geometry(geometry, ctr),
+        GeoJson::Geometry(ref mut geometry) => process_geometry(geometry, ctr, rev),
     }
 }
 
 /// Process `GeoJSON` geometries
-fn label_geometry(geom: &mut Geometry, ctr: &AtomicIsize) {
+fn process_geometry(geom: &mut Geometry, ctr: &AtomicIsize, rev: &bool) {
     match geom.value {
-        Value::Polygon(_) | Value::MultiPolygon(_) => reverse_rings(Some(geom), ctr),
+        Value::Polygon(_) | Value::MultiPolygon(_) => reverse_rings(Some(geom), ctr, rev),
         Value::GeometryCollection(ref mut collection) => {
             // GeometryCollections contain other Geometry types, and can nest
             // we deal with this by recursively processing each geometry
             collection
                 .par_iter_mut()
-                .for_each(|geometry| label_geometry(geometry, ctr))
+                .for_each(|geometry| process_geometry(geometry, ctr, rev))
         }
         // Point, LineString, and their Multi– counterparts
         // no-op
@@ -99,7 +99,7 @@ fn label_geometry(geom: &mut Geometry, ctr: &AtomicIsize) {
 }
 
 /// Generate a label position for a (Multi)Polygon Value
-fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize) {
+fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize, rev: &bool) {
     if let Some(gmt) = geom {
         // construct a fake empty Polygon – this doesn't allocate
         let v1: Vec<Point<f64>> = Vec::new();
@@ -112,11 +112,7 @@ fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize) {
                 let mut geo_type: Polygon<f64> = intermediate
                     .try_into()
                     .expect("Failed to convert a Polygon");
-                geo_type.exterior.make_cw_winding();
-                geo_type
-                    .interiors
-                    .iter_mut()
-                    .for_each(|ring| ring.make_ccw_winding());
+                wind(&mut geo_type, rev);
                 ctr.fetch_add(1, Ordering::SeqCst);
                 Value::from(&geo_type)
             }
@@ -128,16 +124,27 @@ fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize) {
                 geo_type.0.par_iter_mut().for_each(|polygon| {
                     // bump the Polygon counter
                     ctr.fetch_add(1, Ordering::SeqCst);
-                    polygon.exterior.make_cw_winding();
-                    polygon
-                        .interiors
-                        .iter_mut()
-                        .for_each(|ring| ring.make_ccw_winding());
+                    wind(polygon, rev);
                 });
                 Value::from(&geo_type)
             }
             _ => replace(&mut gmt.value, Value::from(&fake_polygon)),
         }
+    }
+}
+
+/// Wind RFC 7946 Polygon rings to make them D3 compatible, or vice-versa
+fn wind(poly: &mut Polygon<f64>, rev: &bool) {
+    if !rev {
+        poly.exterior.make_cw_winding();
+        poly.interiors
+            .iter_mut()
+            .for_each(|ring| ring.make_ccw_winding());
+    } else {
+        poly.exterior.make_ccw_winding();
+        poly.interiors
+            .iter_mut()
+            .for_each(|ring| ring.make_cw_winding());
     }
 }
 
@@ -159,6 +166,12 @@ fn main() {
                 .long("stats-only"),
         )
         .arg(
+            Arg::with_name("reverse")
+                .help("Make D3-compatible Polygons RFC 7946-compatible")
+                .short("r")
+                .long("reverse"),
+        )
+        .arg(
             Arg::with_name("GEOJSON")
                 .help("GeoJSON containing (Multi)Polygons you wish to process using D3")
                 .index(1)
@@ -169,6 +182,7 @@ fn main() {
     let poly = value_t!(command_params.value_of("GEOJSON"), String).unwrap();
     let pprint = command_params.is_present("pretty");
     let statsonly = command_params.is_present("statsonly");
+    let reverse = command_params.is_present("reverse");
     let sp = ProgressBar::new_spinner();
     sp.set_message("Parsing GeoJSON");
     sp.enable_steady_tick(1);
@@ -181,7 +195,7 @@ fn main() {
         Err(e) => println!("{}", e),
         Ok(mut gj) => {
             let ctr = AtomicIsize::new(0);
-            process_geojson(&mut gj, &ctr);
+            process_geojson(&mut gj, &ctr, &reverse);
             sp2.finish_and_clear();
             let to_print = if !pprint {
                 gj.to_string()
@@ -263,10 +277,11 @@ mod tests {
           "type": "FeatureCollection"
         }
         "#;
+        let rev = false;
         let correct = raw_gj.parse::<GeoJson>().unwrap();
         let mut gj = open_and_parse(&"with_hole.geojson").unwrap();
         let ctr = AtomicIsize::new(0);
-        process_geojson(&mut gj, &ctr);
+        process_geojson(&mut gj, &ctr, &rev);
         assert_eq!(gj, correct);
     }
 }
