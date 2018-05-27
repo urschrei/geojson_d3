@@ -3,7 +3,7 @@
 # `GeoJSON_D3`
 
 ## Introduction
-D3 expects the rings of input Polygons in [a different order](https://github.com/d3/d3-geo/pull/79) than the [GeoJSON RFC 7946](https://tools.ietf.org/html/rfc7946#section-3.1.6) specification. This can lead to unexpected errors. This binary provides a conversion function for `RFC 7946`-compliant input containing Polygons and / or MultiPolygons.
+D3 expects the rings of input Polygons to be oriented in [a different order](https://github.com/d3/d3-geo/pull/79) than the [GeoJSON RFC 7946](https://tools.ietf.org/html/rfc7946#section-3.1.6) specification, which can lead to unexpected errors. This binary converts `RFC 7946`-compliant input containing Polygons and / or MultiPolygons to D3-compliant ring orientation.
 
 ## Installation
 Install it using `cargo install geojson_d3`, or download a [binary](#binaries) and put it on your $PATH.  
