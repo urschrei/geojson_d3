@@ -8,17 +8,17 @@ extern crate clap;
 use clap::{App, Arg};
 
 extern crate geo_types;
-use geo_types::{LineString, MultiPoint, MultiPolygon, Point, Polygon};
+use geo_types::{LineString, MultiPolygon, Point, Polygon};
 
 extern crate geo;
 use geo::winding_order::Winding;
 
 extern crate geojson;
 use geojson::conversion::TryInto;
-use geojson::{Error as GjErr, Feature, FeatureCollection, GeoJson, Geometry, Value};
+use geojson::{Error as GjErr, GeoJson, Geometry, Value};
 
 extern crate serde_json;
-use serde_json::{to_string_pretty, Map};
+use serde_json::{to_string_pretty};
 
 extern crate rayon;
 use rayon::prelude::*;
