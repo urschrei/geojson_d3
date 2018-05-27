@@ -1,6 +1,7 @@
-use std::fs::read_to_string;
+use std::fs;
 use std::io::Error as IoErr;
 use std::mem::replace;
+use std::path::Path;
 use std::sync::atomic::{AtomicIsize, Ordering};
 
 #[macro_use]
@@ -18,7 +19,7 @@ use geojson::conversion::TryInto;
 use geojson::{Error as GjErr, GeoJson, Geometry, Value};
 
 extern crate serde_json;
-use serde_json::{to_string_pretty};
+use serde_json::to_string_pretty;
 
 extern crate rayon;
 use rayon::prelude::*;
@@ -55,9 +56,12 @@ impl From<GjErr> for PolylabelError {
 }
 
 /// Attempt to open a file, read it, and parse it into `GeoJSON`
-fn open_and_parse(p: &str) -> Result<GeoJson, PolylabelError> {
-    let contents = read_to_string(p)?;
-    Ok(contents.parse::<GeoJson>()?)
+fn open_and_parse<P>(filename: P) -> Result<GeoJson, PolylabelError>
+where
+    P: AsRef<Path>,
+{
+    let s = fs::read_to_string(filename)?;
+    Ok(s.parse::<GeoJson>()?)
 }
 
 /// Process top-level `GeoJSON` items
