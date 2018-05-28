@@ -3,7 +3,7 @@
 # `GeoJSON_d3`
 
 ## Introduction
-`d3-geo` uses spherical (as opposed to planar) polygons, and expects the rings of input polygons which are _smaller than a hemisphere_ to be oriented in [a different order](https://github.com/d3/d3-geo/pull/79) than the [GeoJSON RFC 7946](https://tools.ietf.org/html/rfc7946#section-3.1.6) specification, which can lead to unexpected errors. This binary checks the spherical area of RFC 7946`-compliant` Polygons, converting them to `d3-geo`-compliant ring orientation if necessary, or vice-versa.
+`d3-geo` uses spherical (as opposed to planar) polygons, and expects the rings of input polygons which are _smaller than a hemisphere_ to be oriented in [a different order](https://github.com/d3/d3-geo/pull/79) than the [GeoJSON RFC 7946](https://tools.ietf.org/html/rfc7946#section-3.1.6) specification, which can lead to unexpected errors. This binary checks the spherical area of RFC 7946-compliant Polygons, converting them to `d3-geo`-compliant ring orientation if necessary, or vice-versa.
 
 ## Installation
 Install it using `cargo install geojson_d3`, or download a [binary](#binaries) and put it on your $PATH.  
@@ -24,7 +24,7 @@ You may also pass:
 - Empty geometries or collections will be left unaltered
 - Non-(Multi)Polygon geometries are left unaltered
 - All input properties are preserved
-- Large (i.e. greater than or equal to a hemisphere) Polygons will always have their shell oriented counter-clockwise, and inner rings oriented clockwise, irrespective of the operation being carried out.
+- Large (i.e. greater than or equal to a hemisphere) Polygons will **always** have their shell oriented counter-clockwise, and inner rings oriented clockwise, irrespective of the operation being carried out.
 
 ## Progress
 If you aren't piping the output of the command to a file, `geojson_d3` will display progress of the parsing and processing steps in the terminal, as well as a final count of the processed (Multi)Polygons.
