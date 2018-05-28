@@ -184,6 +184,7 @@ fn wind(poly: &mut Polygon<f64>, rev: &bool) {
 /// Calculate the spherical area of a closed ring
 // see: https://github.com/d3/d3-geo/blob/master/src/area.js#L49
 // see: https://github.com/project-open-data/esri2open/blob/master/Install/esri2open/topojson/coordinatesystems.py#L63
+// the returned value is in steradians
 fn spherical_ring_area(ring: &LineString<f64>) -> f64 {
     if ring.0.is_empty() {
         return 0.0;
@@ -221,7 +222,7 @@ fn main() {
     let command_params = App::new("geojson_d3")
         .version(&crate_version!()[..])
         .author("Stephan Hügel <urschrei@gmail.com>")
-        .about("Make GeoJSON (Multi)Polygons D3-compatible")
+        .about("Make GeoJSON (Multi)Polygons d3-geo-compatible, and vice-versa")
         .arg(
             Arg::with_name("pretty")
                 .help("Pretty-print GeoJSON output")
@@ -236,13 +237,13 @@ fn main() {
         )
         .arg(
             Arg::with_name("reverse")
-                .help("Make D3-compatible Polygons RFC 7946-compatible")
+                .help("Make d3-geo-compatible Polygons RFC 7946-compatible")
                 .short("r")
                 .long("reverse"),
         )
         .arg(
             Arg::with_name("GEOJSON")
-                .help("GeoJSON containing (Multi)Polygons you wish to process using D3")
+                .help("GeoJSON containing (Multi)Polygons you wish to process using d3-geo")
                 .index(1)
                 .required(true),
         )
