@@ -41,8 +41,8 @@ extern crate approx;
 
 static RADIANS: f64 = PI / 180.0;
 static PI4: f64 = PI / 4.0;
-/// 10 nm
-static EPSILON: f64 = 0.00000001;
+/// 1 nm
+static EPSILON: f64 = 0.000000001;
 
 #[derive(Fail, Debug)]
 enum PolylabelError {
@@ -146,7 +146,7 @@ fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize, rev: &bool) {
 // Reverse-winding should only be applied to polygons with a spherical area
 // less than half a hemisphere. We should calculate this by calculating the spherical
 // area of the polygon (in steradians), in the same way that d3.geoArea does
-// we compare this with 2 * Pi, and ensure that it's within a small delta (1e -8)
+// we compare this with 2 * Pi, and ensure that it's within a small delta (1e -9)
 fn wind(poly: &mut Polygon<f64>, rev: &bool) {
     let large = abs_diff_eq!(
         spherical_ring_area(&poly.exterior),
@@ -189,14 +189,13 @@ fn spherical_ring_area(ring: &LineString<f64>) -> f64 {
     if ring.0.is_empty() {
         return 0.0;
     }
-    let mut area = 0.0;
     let p = ring.0[0];
     let mut lambda_ = p.x() * RADIANS;
     let mut phi = p.y() * RADIANS / 2.0 + PI4;
     let mut lambda0 = lambda_;
     let mut cosphi0 = phi.cos();
     let mut sinphi0 = phi.sin();
-    for point in ring.0.iter().skip(1) {
+    let area = ring.0.iter().skip(1).fold(0.0, |acc, point| {
         lambda_ = point.x() * RADIANS;
         phi = point.y() * RADIANS / 2.0 + PI4;
         // Spherical excess E for a spherical triangle with vertices:
@@ -209,12 +208,12 @@ fn spherical_ring_area(ring: &LineString<f64>) -> f64 {
         let k = sinphi0 * sinphi;
         let u = cosphi0 * cosphi + k * dlambda.cos();
         let v = k * dlambda.sin();
-        area += v.atan2(u);
         // Advance the previous point
         lambda0 = lambda_;
         cosphi0 = cosphi;
         sinphi0 = sinphi;
-    }
+        acc + v.atan2(u)
+    });
     (area * 2.0).abs()
 }
 
