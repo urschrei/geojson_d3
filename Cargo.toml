@@ -1,6 +1,6 @@
 [package]
 name = "geojson_d3"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Stephan Hügel <urschrei@gmail.com>"]
 description = "Process GeoJSON (Multi)Polygons for use with D3"
 readme = "README.md"
@@ -9,6 +9,7 @@ keywords = ["geo", "geojson", "d3"]
 license = "MIT"
 
 [dependencies]
+approx = "0.2.0"
 geojson = "0.11.0"
 geo-types = "0.1.0"
 geo = "0.9.1"

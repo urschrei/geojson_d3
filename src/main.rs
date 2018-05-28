@@ -1,3 +1,4 @@
+use std::f64::consts::PI;
 use std::fs;
 use std::io::Error as IoErr;
 use std::mem::replace;
@@ -35,6 +36,13 @@ use indicatif::ProgressBar;
 #[macro_use]
 extern crate failure_derive;
 
+#[macro_use]
+extern crate approx;
+
+static RADIANS: f64 = PI / 180.0;
+static PI4: f64 = PI / 4.0;
+/// 10 nm
+static EPSILON: f64 = 0.00000001;
 
 #[derive(Fail, Debug)]
 enum PolylabelError {
@@ -134,23 +142,79 @@ fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize, rev: &bool) {
     }
 }
 
-/// Wind RFC 7946 Polygon rings to make them d3-geo compatible, or vice-versa
-// TODO: reverse-winding should only be applied to polygons with a spherical area
+/// Wind RFC 7946 Polygon rings to make them d3-geo compatible, or vice-versa.
+// Reverse-winding should only be applied to polygons with a spherical area
 // less than half a hemisphere. We should calculate this by calculating the spherical
 // area of the polygon (in steradians), in the same way that d3.geoArea does
-// we compare this with 2 * Pi, and ensure that it's within a small delta (1e -6) 
+// we compare this with 2 * Pi, and ensure that it's within a small delta (1e -8)
 fn wind(poly: &mut Polygon<f64>, rev: &bool) {
-    if !rev {
+    let large = abs_diff_eq!(
+        spherical_ring_area(&poly.exterior),
+        PI * 2.0,
+        epsilon = EPSILON
+    );
+    // we want d3-geo-compatible, and area is small
+    if !rev && !large {
         poly.exterior.make_cw_winding();
         poly.interiors
             .iter_mut()
             .for_each(|ring| ring.make_ccw_winding());
-    } else {
+    // we want RFC 2974-compatible, and area is small
+    } else if *rev && !large {
+        poly.exterior.make_ccw_winding();
+        poly.interiors
+            .iter_mut()
+            .for_each(|ring| ring.make_cw_winding());
+    // we want d3-geo-compatible, and area is large
+    } else if !rev && large {
+        poly.exterior.make_ccw_winding();
+        poly.interiors
+            .iter_mut()
+            .for_each(|ring| ring.make_cw_winding());
+    // we want RFC 2974-compatible, and area is large
+    } else if *rev && large {
+        // this could be a no-op, but why not be certain?
         poly.exterior.make_ccw_winding();
         poly.interiors
             .iter_mut()
             .for_each(|ring| ring.make_cw_winding());
     }
+}
+
+/// Calculate the spherical area of a closed ring
+// see: https://github.com/d3/d3-geo/blob/master/src/area.js#L49
+// see: https://github.com/project-open-data/esri2open/blob/master/Install/esri2open/topojson/coordinatesystems.py#L63
+fn spherical_ring_area(ring: &LineString<f64>) -> f64 {
+    if ring.0.is_empty() {
+        return 0.0;
+    }
+    let mut area = 0.0;
+    let p = ring.0[0];
+    let mut lambda_ = p.x() * RADIANS;
+    let mut phi = p.y() * RADIANS / 2.0 + PI4;
+    let mut lambda0 = lambda_;
+    let mut cosphi0 = phi.cos();
+    let mut sinphi0 = phi.sin();
+    for pp in ring.0.iter().skip(1) {
+        lambda_ = pp.x() * RADIANS;
+        phi = pp.y() * RADIANS / 2.0 + PI4;
+        // Spherical excess E for a spherical triangle with vertices:
+        // south pole, previous point, current point.
+        // Uses a formula derived from Cagnoli’s theorem.
+        // See Todhunter, Spherical Trig. (1871), Sec. 103, Eq. (2).
+        let dlambda = lambda_ - lambda0;
+        let cosphi = phi.cos();
+        let sinphi = phi.sin();
+        let k = sinphi0 * sinphi;
+        let u = cosphi0 * cosphi + k * dlambda.cos();
+        let v = k * dlambda.sin();
+        area += v.atan2(u);
+        // Advance the previous point
+        lambda0 = lambda_;
+        cosphi0 = cosphi;
+        sinphi0 = sinphi;
+    }
+    (area * 2.0).abs()
 }
 
 fn main() {
@@ -226,6 +290,7 @@ fn main() {
 mod tests {
     use super::*;
     use geojson::GeoJson;
+
     #[test]
     fn test_ccw() {
         let raw_gj = r#"
@@ -288,5 +353,18 @@ mod tests {
         let ctr = AtomicIsize::new(0);
         process_geojson(&mut gj, &ctr, &rev);
         assert_eq!(gj, correct);
+    }
+    #[test]
+    fn test_ring_area() {
+        // Southern hemisphere
+        let ring: LineString<_> = vec![
+            (0.0, 0.0),
+            (-90.0, 0.0),
+            (180.0, 0.0),
+            (90.0, 0.0),
+            (0.0, 0.0),
+        ].into();
+        let area = spherical_ring_area(&ring);
+        assert_abs_diff_eq!(area, PI * 2.0, epsilon = EPSILON);
     }
 }
