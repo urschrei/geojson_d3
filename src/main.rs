@@ -107,7 +107,7 @@ fn process_geometry(geom: &mut Geometry, ctr: &AtomicIsize, rev: &bool) {
     }
 }
 
-/// Generate a label position for a (Multi)Polygon Value
+/// Generate a correct winding for the ring
 fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize, rev: &bool) {
     if let Some(gmt) = geom {
         // construct a fake empty Polygon – this doesn't allocate
@@ -196,9 +196,9 @@ fn spherical_ring_area(ring: &LineString<f64>) -> f64 {
     let mut lambda0 = lambda_;
     let mut cosphi0 = phi.cos();
     let mut sinphi0 = phi.sin();
-    for pp in ring.0.iter().skip(1) {
-        lambda_ = pp.x() * RADIANS;
-        phi = pp.y() * RADIANS / 2.0 + PI4;
+    for point in ring.0.iter().skip(1) {
+        lambda_ = point.x() * RADIANS;
+        phi = point.y() * RADIANS / 2.0 + PI4;
         // Spherical excess E for a spherical triangle with vertices:
         // south pole, previous point, current point.
         // Uses a formula derived from Cagnoli’s theorem.
