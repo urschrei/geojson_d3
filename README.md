@@ -3,7 +3,7 @@
 # `GeoJSON_D3`
 
 ## Introduction
-D3 expects the rings of input Polygons to be oriented in [a different order](https://github.com/d3/d3-geo/pull/79) than the [GeoJSON RFC 7946](https://tools.ietf.org/html/rfc7946#section-3.1.6) specification, which can lead to unexpected errors. This binary converts `RFC 7946`-compliant input containing Polygons and / or MultiPolygons to D3-compliant ring orientation, or vice-versa.
+d3-geo uses spherical (as opposed to planar) polygons, and expects the rings of input polygons which are _smaller than a hemisphere_ to be oriented in [a different order](https://github.com/d3/d3-geo/pull/79) than the [GeoJSON RFC 7946](https://tools.ietf.org/html/rfc7946#section-3.1.6) specification, which can lead to unexpected errors. This binary converts `RFC 7946`-compliant input containing Polygons and / or MultiPolygons to d3-geo-compliant ring orientation, or vice-versa.
 
 ## Installation
 Install it using `cargo install geojson_d3`, or download a [binary](#binaries) and put it on your $PATH.  
@@ -13,11 +13,11 @@ This provides the `geojson_d3` command.
 `geojson_d3` takes one mandatory argument: a file containing valid GeoJSON. Polygon and / or MultiPolygon geometries can be included as a `Feature,` or a `Geometry`, or a`FeatureCollection` or `GeometryCollection` – you may also mix the two geometries in a `FeatureCollection` or `GeometryCollection`.
 
 - No assumptions are made concerning the existing winding order:
-    - by default output will be D3-compliant winding order
+    - by default output will be d3-geo-compliant winding order
     - if `-r` or `--reverse` are specified, they will be in RFC 7946 order
 - Processing of nested `GeometryCollection`s is supported, [but you shouldn't be using those](https://tools.ietf.org/html/rfc7946#section-3.1.8)
 - Empty geometries or collections will be left unaltered
-- Geometries which are already in "`D3`" format will be left unaltered
+- Geometries which are already in "`d3-geo`" format will be left unaltered
 - Non-(Multi)Polygon geometries are left unaltered
 - All input properties are preserved
 
