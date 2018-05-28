@@ -41,5 +41,8 @@ Pre-built binaries are available from [releases](https://github.com/urschrei/geo
 - Linux (x86_64)
 - Windows (x86_64 and i686)
 
+## TODO
+- Restrict conversions to polygons with an area less than half a hemisphere, so _you_ don't have to think about it
+
 ## License
 [MIT](license.txt)

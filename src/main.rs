@@ -35,6 +35,7 @@ use indicatif::ProgressBar;
 #[macro_use]
 extern crate failure_derive;
 
+
 #[derive(Fail, Debug)]
 enum PolylabelError {
     #[fail(display = "IO error: {}", _0)]
@@ -133,7 +134,11 @@ fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize, rev: &bool) {
     }
 }
 
-/// Wind RFC 7946 Polygon rings to make them D3 compatible, or vice-versa
+/// Wind RFC 7946 Polygon rings to make them d3-geo compatible, or vice-versa
+// TODO: reverse-winding should only be applied to polygons with a spherical area
+// less than half a hemisphere. We should calculate this by calculating the spherical
+// area of the polygon (in steradians), in the same way that d3.geoArea does
+// we compare this with 2 * Pi, and ensure that it's within a small delta (1e -6) 
 fn wind(poly: &mut Polygon<f64>, rev: &bool) {
     if !rev {
         poly.exterior.make_cw_winding();
