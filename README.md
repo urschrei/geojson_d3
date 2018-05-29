@@ -24,7 +24,6 @@ You may also pass:
 - Empty geometries or collections will be left unaltered
 - Non-(Multi)Polygon geometries are left unaltered
 - All input properties are preserved
-- Large (i.e. greater than or equal to a hemisphere) Polygons will **always** have their shell oriented counter-clockwise, and inner rings oriented clockwise, irrespective of the operation being carried out.
 
 ## Progress
 If you aren't piping the output of the command to a file, `geojson_d3` will display progress of the parsing and processing steps in the terminal, as well as a final count of the processed (Multi)Polygons.

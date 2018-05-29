@@ -143,38 +143,16 @@ fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize, rev: &bool) {
 }
 
 /// Wind RFC 7946 Polygon rings to make them d3-geo compatible, or vice-versa.
-// Reverse-winding should only be applied to polygons with a spherical area
-// less than half a hemisphere. We should calculate this by calculating the spherical
-// area of the polygon (in steradians), in the same way that d3.geoArea does
-// we compare this with 2 * Pi, and ensure that it's within a small delta (1e -9)
 #[inline]
 fn wind(poly: &mut Polygon<f64>, rev: &bool) {
-    let large = abs_diff_eq!(
-        spherical_ring_area(&poly.exterior),
-        PI * 2.0,
-        epsilon = EPSILON
-    );
-    // we want d3-geo-compatible, and area is small
-    if !rev && !large {
+    // we want d3-geo-compatible
+    if !rev {
         poly.exterior.make_cw_winding();
         poly.interiors
             .iter_mut()
             .for_each(|ring| ring.make_ccw_winding());
-    // we want RFC 2974-compatible, and area is small
-    } else if *rev && !large {
-        poly.exterior.make_ccw_winding();
-        poly.interiors
-            .iter_mut()
-            .for_each(|ring| ring.make_cw_winding());
-    // we want d3-geo-compatible, and area is large
-    } else if !rev && large {
-        poly.exterior.make_ccw_winding();
-        poly.interiors
-            .iter_mut()
-            .for_each(|ring| ring.make_cw_winding());
-    // we want RFC 2974-compatible, and area is large
-    } else if *rev && large {
-        // this could be a no-op, but why not be certain?
+    // we want RFC 2974-compatible
+    } else if *rev {
         poly.exterior.make_ccw_winding();
         poly.interiors
             .iter_mut()
@@ -186,6 +164,7 @@ fn wind(poly: &mut Polygon<f64>, rev: &bool) {
 // see: https://github.com/d3/d3-geo/blob/master/src/area.js#L49
 // see: https://github.com/project-open-data/esri2open/blob/master/Install/esri2open/topojson/coordinatesystems.py#L63
 // the returned value is in steradians
+// NOT CURRENTLY NEEDED
 #[inline]
 fn spherical_ring_area(ring: &LineString<f64>) -> f64 {
     if ring.0.is_empty() {
