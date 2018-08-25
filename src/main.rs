@@ -171,14 +171,14 @@ fn spherical_ring_area(ring: &LineString<f64>) -> f64 {
         return 0.0;
     }
     let p = ring.0[0];
-    let mut lambda_ = p.x() * RADIANS;
-    let mut phi = p.y() * RADIANS / 2.0 + PI4;
+    let mut lambda_ = p.x * RADIANS;
+    let mut phi = p.y * RADIANS / 2.0 + PI4;
     let mut lambda0 = lambda_;
     let mut cosphi0 = phi.cos();
     let mut sinphi0 = phi.sin();
     let area = ring.0.iter().skip(1).fold(0.0, |acc, point| {
-        lambda_ = point.x() * RADIANS;
-        phi = point.y() * RADIANS / 2.0 + PI4;
+        lambda_ = point.x * RADIANS;
+        phi = point.y * RADIANS / 2.0 + PI4;
         // Spherical excess E for a spherical triangle with vertices:
         // south pole, previous point, current point.
         // Uses a formula derived from Cagnoli’s theorem.
