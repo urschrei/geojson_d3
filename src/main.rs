@@ -48,7 +48,10 @@ static EPSILON: f64 = 0.000000001;
 enum PolylabelError {
     #[fail(display = "IO error: {}", _0)]
     IoError(#[cause] IoErr),
-    #[fail(display = "GeoJSON deserialisation error: {}. Is your GeoJSON valid?", _0)]
+    #[fail(
+        display = "GeoJSON deserialisation error: {}. Is your GeoJSON valid?",
+        _0
+    )]
     GeojsonError(#[cause] GjErr),
 }
 
@@ -76,7 +79,8 @@ where
 /// Process top-level `GeoJSON` items
 fn process_geojson(gj: &mut GeoJson, ctr: &AtomicIsize, rev: &bool) {
     match *gj {
-        GeoJson::FeatureCollection(ref mut collection) => collection.features
+        GeoJson::FeatureCollection(ref mut collection) => collection
+            .features
             .par_iter_mut()
             // Only pass on non-empty geometries, doing so by reference
             .filter_map(|feature| feature.geometry.as_mut())
@@ -344,7 +348,8 @@ mod tests {
             (180.0, 0.0),
             (90.0, 0.0),
             (0.0, 0.0),
-        ].into();
+        ]
+        .into();
         let area = spherical_ring_area(&ring);
         assert_abs_diff_eq!(area, PI * 2.0, epsilon = EPSILON);
     }

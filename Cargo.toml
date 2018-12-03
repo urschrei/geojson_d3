@@ -1,6 +1,6 @@
 [package]
 name = "geojson_d3"
-version = "0.1.9"
+version = "0.1.10"
 authors = ["Stephan Hügel <urschrei@gmail.com>"]
 description = "Process GeoJSON (Multi)Polygons for use with D3"
 readme = "README.md"
@@ -19,7 +19,7 @@ rayon = "1.0.1"
 failure = "0.1.1"
 failure_derive = "0.1.1"
 console = "0.6.1"
-indicatif = "0.9.0"
+indicatif = "0.10.2"
 
 [profile.release]
 lto = true
