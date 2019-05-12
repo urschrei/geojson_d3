@@ -5,39 +5,16 @@ use std::mem::replace;
 use std::path::Path;
 use std::sync::atomic::{AtomicIsize, Ordering};
 
-#[macro_use]
-extern crate clap;
-use clap::{App, Arg};
-
-extern crate geo_types;
-use geo_types::{LineString, MultiPolygon, Point, Polygon};
-
-extern crate geo;
-use geo::winding_order::Winding;
-
-extern crate geojson;
-use geojson::conversion::TryInto;
-use geojson::{Error as GjErr, GeoJson, Geometry, Value};
-
-extern crate serde_json;
-use serde_json::to_string_pretty;
-
-extern crate rayon;
-use rayon::prelude::*;
-
-extern crate failure;
-
-extern crate console;
+use clap::{crate_version, value_t, App, Arg};
 use console::{style, user_attended};
-
-extern crate indicatif;
+use failure::Fail;
+use geo::winding_order::Winding;
+use geo_types::{LineString, MultiPolygon, Point, Polygon};
+use geojson::{Error as GjErr, GeoJson, Geometry, Value};
 use indicatif::ProgressBar;
-
-#[macro_use]
-extern crate failure_derive;
-
-#[macro_use]
-extern crate approx;
+use rayon::prelude::*;
+use serde_json::to_string_pretty;
+use std::convert::TryInto;
 
 static RADIANS: f64 = PI / 180.0;
 static PI4: f64 = PI / 4.0;
@@ -151,16 +128,12 @@ fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize, rev: &bool) {
 fn wind(poly: &mut Polygon<f64>, rev: &bool) {
     // we want d3-geo-compatible
     if !rev {
-        poly.exterior.make_cw_winding();
-        poly.interiors
-            .iter_mut()
-            .for_each(|ring| ring.make_ccw_winding());
+        poly.exterior_mut(|e| e.make_cw_winding());
+        poly.interiors_mut(|i| i.iter_mut().for_each(|ring| ring.make_ccw_winding()));
     // we want RFC 2974-compatible
     } else if *rev {
-        poly.exterior.make_ccw_winding();
-        poly.interiors
-            .iter_mut()
-            .for_each(|ring| ring.make_cw_winding());
+        poly.exterior_mut(|e| e.make_ccw_winding());
+        poly.interiors_mut(|i| i.iter_mut().for_each(|ring| ring.make_cw_winding()));
     }
 }
 
@@ -274,7 +247,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use geojson::GeoJson;
+    use approx::assert_abs_diff_eq;
 
     #[test]
     fn test_ccw() {
