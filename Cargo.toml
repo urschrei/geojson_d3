@@ -1,25 +1,26 @@
 [package]
 name = "geojson_d3"
-version = "0.1.8"
+version = "0.2.0"
 authors = ["Stephan Hügel <urschrei@gmail.com>"]
 description = "Process GeoJSON (Multi)Polygons for use with D3"
 readme = "README.md"
 repository = "https://github.com/urschrei/geojson_d3"
 keywords = ["geo", "geojson", "d3"]
 license = "MIT"
+edition = "2018"
 
 [dependencies]
-approx = "0.2.0"
-geojson = "0.11.0"
-geo-types = "0.1.0"
-geo = "0.9.1"
+approx = "0.3.2"
+geojson = { version =  "0.16.0", features=["geo-types"] }
+geo-types = "0.4.0"
+geo = "0.12.0"
 clap = "2.31.1"
-serde_json = "1.0.18"
+serde_json = "1.0.39"
 rayon = "1.0.1"
-failure = "0.1.1"
+failure = "0.1.5"
 failure_derive = "0.1.1"
 console = "0.6.1"
-indicatif = "0.9.0"
+indicatif = "0.11.0"
 
 [profile.release]
 lto = true

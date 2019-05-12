@@ -5,39 +5,16 @@ use std::mem::replace;
 use std::path::Path;
 use std::sync::atomic::{AtomicIsize, Ordering};
 
-#[macro_use]
-extern crate clap;
-use clap::{App, Arg};
-
-extern crate geo_types;
-use geo_types::{LineString, MultiPolygon, Point, Polygon};
-
-extern crate geo;
-use geo::winding_order::Winding;
-
-extern crate geojson;
-use geojson::conversion::TryInto;
-use geojson::{Error as GjErr, GeoJson, Geometry, Value};
-
-extern crate serde_json;
-use serde_json::to_string_pretty;
-
-extern crate rayon;
-use rayon::prelude::*;
-
-extern crate failure;
-
-extern crate console;
+use clap::{crate_version, value_t, App, Arg};
 use console::{style, user_attended};
-
-extern crate indicatif;
+use failure::Fail;
+use geo::winding_order::Winding;
+use geo_types::{LineString, MultiPolygon, Point, Polygon};
+use geojson::{Error as GjErr, GeoJson, Geometry, Value};
 use indicatif::ProgressBar;
-
-#[macro_use]
-extern crate failure_derive;
-
-#[macro_use]
-extern crate approx;
+use rayon::prelude::*;
+use serde_json::to_string_pretty;
+use std::convert::TryInto;
 
 static RADIANS: f64 = PI / 180.0;
 static PI4: f64 = PI / 4.0;
@@ -48,7 +25,10 @@ static EPSILON: f64 = 0.000000001;
 enum PolylabelError {
     #[fail(display = "IO error: {}", _0)]
     IoError(#[cause] IoErr),
-    #[fail(display = "GeoJSON deserialisation error: {}. Is your GeoJSON valid?", _0)]
+    #[fail(
+        display = "GeoJSON deserialisation error: {}. Is your GeoJSON valid?",
+        _0
+    )]
     GeojsonError(#[cause] GjErr),
 }
 
@@ -76,7 +56,8 @@ where
 /// Process top-level `GeoJSON` items
 fn process_geojson(gj: &mut GeoJson, ctr: &AtomicIsize, rev: &bool) {
     match *gj {
-        GeoJson::FeatureCollection(ref mut collection) => collection.features
+        GeoJson::FeatureCollection(ref mut collection) => collection
+            .features
             .par_iter_mut()
             // Only pass on non-empty geometries, doing so by reference
             .filter_map(|feature| feature.geometry.as_mut())
@@ -147,16 +128,12 @@ fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize, rev: &bool) {
 fn wind(poly: &mut Polygon<f64>, rev: &bool) {
     // we want d3-geo-compatible
     if !rev {
-        poly.exterior.make_cw_winding();
-        poly.interiors
-            .iter_mut()
-            .for_each(|ring| ring.make_ccw_winding());
+        poly.exterior_mut(|e| e.make_cw_winding());
+        poly.interiors_mut(|i| i.iter_mut().for_each(|ring| ring.make_ccw_winding()));
     // we want RFC 2974-compatible
     } else if *rev {
-        poly.exterior.make_ccw_winding();
-        poly.interiors
-            .iter_mut()
-            .for_each(|ring| ring.make_cw_winding());
+        poly.exterior_mut(|e| e.make_ccw_winding());
+        poly.interiors_mut(|i| i.iter_mut().for_each(|ring| ring.make_cw_winding()));
     }
 }
 
@@ -171,14 +148,14 @@ fn spherical_ring_area(ring: &LineString<f64>) -> f64 {
         return 0.0;
     }
     let p = ring.0[0];
-    let mut lambda_ = p.x() * RADIANS;
-    let mut phi = p.y() * RADIANS / 2.0 + PI4;
+    let mut lambda_ = p.x * RADIANS;
+    let mut phi = p.y * RADIANS / 2.0 + PI4;
     let mut lambda0 = lambda_;
     let mut cosphi0 = phi.cos();
     let mut sinphi0 = phi.sin();
     let area = ring.0.iter().skip(1).fold(0.0, |acc, point| {
-        lambda_ = point.x() * RADIANS;
-        phi = point.y() * RADIANS / 2.0 + PI4;
+        lambda_ = point.x * RADIANS;
+        phi = point.y * RADIANS / 2.0 + PI4;
         // Spherical excess E for a spherical triangle with vertices:
         // south pole, previous point, current point.
         // Uses a formula derived from Cagnoli’s theorem.
@@ -270,7 +247,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use geojson::GeoJson;
+    use approx::assert_abs_diff_eq;
 
     #[test]
     fn test_ccw() {
@@ -344,7 +321,8 @@ mod tests {
             (180.0, 0.0),
             (90.0, 0.0),
             (0.0, 0.0),
-        ].into();
+        ]
+        .into();
         let area = spherical_ring_area(&ring);
         assert_abs_diff_eq!(area, PI * 2.0, epsilon = EPSILON);
     }
