@@ -19,7 +19,7 @@ use std::convert::TryInto;
 static RADIANS: f64 = PI / 180.0;
 static PI4: f64 = PI / 4.0;
 /// 1 nm
-static EPSILON: f64 = 0.000000001;
+static EPSILON: f64 = 0.000_000_001;
 
 #[derive(Fail, Debug)]
 enum PolylabelError {
@@ -54,7 +54,7 @@ where
 }
 
 /// Process top-level `GeoJSON` items
-fn process_geojson(gj: &mut GeoJson, ctr: &AtomicIsize, rev: &bool) {
+fn process_geojson(gj: &mut GeoJson, ctr: &AtomicIsize, rev: bool) {
     match *gj {
         GeoJson::FeatureCollection(ref mut collection) => collection
             .features
@@ -72,7 +72,7 @@ fn process_geojson(gj: &mut GeoJson, ctr: &AtomicIsize, rev: &bool) {
 }
 
 /// Process `GeoJSON` geometries
-fn process_geometry(geom: &mut Geometry, ctr: &AtomicIsize, rev: &bool) {
+fn process_geometry(geom: &mut Geometry, ctr: &AtomicIsize, rev: bool) {
     match geom.value {
         Value::Polygon(_) | Value::MultiPolygon(_) => reverse_rings(Some(geom), ctr, rev),
         Value::GeometryCollection(ref mut collection) => {
@@ -89,7 +89,7 @@ fn process_geometry(geom: &mut Geometry, ctr: &AtomicIsize, rev: &bool) {
 }
 
 /// Generate a correct winding for the ring
-fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize, rev: &bool) {
+fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize, rev: bool) {
     if let Some(gmt) = geom {
         // construct a fake empty Polygon – this doesn't allocate
         let v1: Vec<Point<f64>> = Vec::new();
@@ -125,15 +125,15 @@ fn reverse_rings(geom: Option<&mut Geometry>, ctr: &AtomicIsize, rev: &bool) {
 
 /// Wind RFC 7946 Polygon rings to make them d3-geo compatible, or vice-versa.
 #[inline]
-fn wind(poly: &mut Polygon<f64>, rev: &bool) {
+fn wind(poly: &mut Polygon<f64>, rev: bool) {
     // we want d3-geo-compatible
     if !rev {
-        poly.exterior_mut(|e| e.make_cw_winding());
-        poly.interiors_mut(|i| i.iter_mut().for_each(|ring| ring.make_ccw_winding()));
+        poly.exterior_mut(Winding::make_cw_winding);
+        poly.interiors_mut(|i| i.iter_mut().for_each(Winding::make_ccw_winding));
     // we want RFC 2974-compatible
-    } else if *rev {
-        poly.exterior_mut(|e| e.make_ccw_winding());
-        poly.interiors_mut(|i| i.iter_mut().for_each(|ring| ring.make_cw_winding()));
+    } else if rev {
+        poly.exterior_mut(Winding::make_ccw_winding);
+        poly.interiors_mut(|i| i.iter_mut().for_each(Winding::make_cw_winding));
     }
 }
 
@@ -222,7 +222,7 @@ fn main() {
         Err(e) => println!("{}", e),
         Ok(mut gj) => {
             let ctr = AtomicIsize::new(0);
-            process_geojson(&mut gj, &ctr, &reverse);
+            process_geojson(&mut gj, &ctr, reverse);
             sp2.finish_and_clear();
             let to_print = if !pprint {
                 gj.to_string()
@@ -309,7 +309,7 @@ mod tests {
         let correct = raw_gj.parse::<GeoJson>().unwrap();
         let mut gj = open_and_parse(&"with_hole.geojson").unwrap();
         let ctr = AtomicIsize::new(0);
-        process_geojson(&mut gj, &ctr, &rev);
+        process_geojson(&mut gj, &ctr, rev);
         assert_eq!(gj, correct);
     }
     #[test]
