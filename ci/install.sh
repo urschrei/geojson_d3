@@ -10,7 +10,7 @@ main() {
         sort=gsort  # for `sort --sort-version`, from brew's coreutils.
     fi
 
-    cargo install cross
+    cargo install cross --force
 }
 
 main

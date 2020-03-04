@@ -8,7 +8,7 @@ env:
     # TODO change the project name
     - CRATE_NAME=geojson_d3
     - TRAVIS_CARGO_NIGHTLY_FEATURE=""
-    - DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
+    - DOCKER_IMAGE=quay.io/pypa/manylinux2010_x86_64
     # GH_TOKEN
     - secure: duS4EzFgamSd0mhi/MVsWnnyZpn9031VFSmoNIaLocP/vLRalkewMf/vkc2QCt6L4uJgts6kL3j3JcC9lYa5D6MJwwyAxkn6KwivrG6g/Z+mywjDll+P9iqIF96O0okFxnITu3I4yZDsYb9ERH25sfYzetAFbvjc3vOL8FD6bHboo65iukDWrl18QS8qdHycAb7Q9mxjK+0HbP0IjlROLhjzwJ3/xQ40Cv2xgZKnNGH2QsrbLhnKvrvoScU7AZR3gw5XaNWyiVkVmHEfwNwFYX/LDAeTIzH3sdYFTjersDHLFbmTzLSQuIHfEvSzzBdvasUiZIGF/rsFjjhsov5pjXRbwaZUHrPH6Gkmx916T/vZyWeg38QJvsdZ6n//gbas+Nnr4g/mvVGfZDlr1+RTKZWCmf5HjuC3Wsa59RTkr1+d7p2tefUk52N4cPcn+MF/zXT8EmnL//O/QNjQaLMdmYvnQcWykMtwY2JkHgiuNRy7LRO9NACDw16rVjM0HNGI3XXGTYwL0cB02SSSAkK4/8dHspc8XT57/QLW1XTqk1osgbrTNXxx9ajwpKkXKdbfXmN2hxGHtixtQrwgWEZTuWC6E70RTfLYnu62bZ/jaqx2E/EDVZu3/wq1vBLcal1UCYh9L3ln3RtEAzKNPUtHBKGeEfkaZ+i52jLoUir4lCo=
 
@@ -17,7 +17,7 @@ matrix:
   include:
     # STABLE
     - os: osx
-      osx_image: xcode9.3
+      osx_image: xcode11.3
       rust: stable
       env: TARGET=x86_64-apple-darwin
 
@@ -29,7 +29,7 @@ matrix:
     # BETA
     - os: osx
       rust: beta
-      osx_image: xcode9.3
+      osx_image: xcode11.3
       env: TARGET=x86_64-apple-darwin
 
     - os: linux
@@ -38,7 +38,7 @@ matrix:
 
     # NIGHTLY
     - os: osx
-      osx_image: xcode9.3
+      osx_image: xcode11.3
       rust: nightly
       env: TARGET=x86_64-apple-darwin
 
