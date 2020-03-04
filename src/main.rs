@@ -1,56 +1,34 @@
 use std::f64::consts::PI;
 use std::fs;
-use std::io::Error as IoErr;
 use std::mem::replace;
 use std::path::Path;
 use std::sync::atomic::{AtomicIsize, Ordering};
 
 use clap::{crate_version, value_t, App, Arg};
 use console::{style, user_attended};
-use failure::Fail;
 use geo::winding_order::Winding;
 use geo_types::{LineString, MultiPolygon, Point, Polygon};
-use geojson::{Error as GjErr, GeoJson, Geometry, Value};
+use geojson::{GeoJson, Geometry, Value};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use serde_json::to_string_pretty;
 use std::convert::TryInto;
+// use thiserror::Error;
+use anyhow::{Context, Error};
 
 static RADIANS: f64 = PI / 180.0;
 static PI4: f64 = PI / 4.0;
 /// 1 nm
 static EPSILON: f64 = 0.000_000_001;
 
-#[derive(Fail, Debug)]
-enum PolylabelError {
-    #[fail(display = "IO error: {}", _0)]
-    IoError(#[cause] IoErr),
-    #[fail(
-        display = "GeoJSON deserialisation error: {}. Is your GeoJSON valid?",
-        _0
-    )]
-    GeojsonError(#[cause] GjErr),
-}
-
-impl From<IoErr> for PolylabelError {
-    fn from(err: IoErr) -> PolylabelError {
-        PolylabelError::IoError(err)
-    }
-}
-
-impl From<GjErr> for PolylabelError {
-    fn from(err: GjErr) -> PolylabelError {
-        PolylabelError::GeojsonError(err)
-    }
-}
-
 /// Attempt to open a file, read it, and parse it into `GeoJSON`
-fn open_and_parse<P>(filename: P) -> Result<GeoJson, PolylabelError>
+fn open_and_parse<P>(filename: P) -> Result<GeoJson, Error>
 where
     P: AsRef<Path>,
 {
     let s = fs::read_to_string(filename)?;
-    Ok(s.parse::<GeoJson>()?)
+    s.parse::<GeoJson>()
+        .context("GeoJSON deserialisation error. Is your GeoJSON valid?")
 }
 
 /// Process top-level `GeoJSON` items
@@ -215,12 +193,12 @@ fn main() {
     sp.enable_steady_tick(1);
     let res = open_and_parse(&poly);
     sp.finish_and_clear();
-    let sp2 = ProgressBar::new_spinner();
-    sp2.set_message("Processing…");
-    sp2.enable_steady_tick(1);
     match res {
-        Err(e) => println!("{}", e),
+        Err(e) => println!("{:?}", e),
         Ok(mut gj) => {
+            let sp2 = ProgressBar::new_spinner();
+            sp2.set_message("Processing…");
+            sp2.enable_steady_tick(1);
             let ctr = AtomicIsize::new(0);
             process_geojson(&mut gj, &ctr, reverse);
             sp2.finish_and_clear();
